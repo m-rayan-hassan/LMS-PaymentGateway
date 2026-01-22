@@ -104,28 +104,84 @@ export const updateUserProfile = catchAsync(async (req, res) => {
 
 export const changeUserPassword = catchAsync(async (req, res) => {
   // TODO: Implement change user password functionality
+  const { password, newPassword } = req.id;
+  const user = await User.findByIdAndUpdate(req.id).select("+password");
+
+  if (!(await user.comparePassword(password))) {
+    throw new ApiError("Current password is incorrect", 401)
+  }
+
+  user.password = newPassword;
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    message: "Password changed successfully",
+  })
 });
 
-/**
- * Request password reset
- * @route POST /api/v1/users/forgot-password
- */
+
 export const forgotPassword = catchAsync(async (req, res) => {
   // TODO: Implement forgot password functionality
+  const { email } = req.body;
+
+  const user = await User.findOne({email: email.toLowerCase()});
+  
+  if (!user) {
+    throw new ApiError("User not found", 404);
+  }
+  const resetToken = user.getResetPasswordToken();
+  await user.save({validateBeforeSave: false});
+  
+  // send token to email
+
+  res.status(200).json({
+    success: true,
+    message: "Reset Password instructions sent to user's email successfully"
+  });
+  
 });
 
-/**
- * Reset password
- * @route POST /api/v1/users/reset-password/:token
- */
+
 export const resetPassword = catchAsync(async (req, res) => {
   // TODO: Implement reset password functionality
+  const { token } = req.params;
+  const { password } = req.body;
+
+  const user = await User.findOne({
+    resetPasswordToken: crypto.createHash("sha256").update(token).digest("hex"),
+    resetPasswordExpiry: { gt: Date.now()}
+  });
+
+  if (!user) {
+    throw new ApiError("Invalid or expired reset token");
+  }
+
+  user.password = password;
+  user.resetPasswordToken = undefined,
+  user.resetPasswordExpiry = undefined,
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    message: "Password reset successful"
+  })
+
 });
 
-/**
- * Delete user account
- * @route DELETE /api/v1/users/account
- */
+
 export const deleteUserAccount = catchAsync(async (req, res) => {
   // TODO: Implement delete user account functionality
+  const user = await User.findById(req.id);
+
+  if (user.avatar && user.avatar != "default-avatar.png") {
+    deleteMedia(user.avatar);
+  }
+
+  await User.findByIdAndDelete(req.id);
+
+  res.status(200).json({
+    success: true,
+    message: "User account deleted successfully",
+  })
 });

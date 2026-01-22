@@ -1,14 +1,18 @@
-import dotenv from "dotenv";
 import express from "express";
-import rateLimit from "express-rate-limit";
+import dotenv from "dotenv";
+import cookieParser from "cookie-parser";
+import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import mongoSanitize from "express-mongo-sanitize";
 import hpp from "hpp";
-import cookieParser from "cookie-parser";
-import cors from "cors";
-import healthRoute from "./routes/health.routes.js"
-import userRoute from "./routes/user.routes.js"
+import rateLimit from "express-rate-limit";
+import userRoute from "./routes/user.route.js";
+import courseRoute from "./routes/course.route.js";
+import mediaRoute from "./routes/media.route.js";
+import purchaseRoute from "./routes/purchaseCourse.route.js";
+import courseProgressRoute from "./routes/courseProgress.route.js";
+import healthRoute from "./routes/health.route.js";
 
 dotenv.config();
 
@@ -73,8 +77,12 @@ app.use(cors({
 }));
 
 // API Routes
-app.use("/health", healthRoute);
+app.use("/api/v1/media", mediaRoute);
 app.use("/api/v1/user", userRoute);
+app.use("/api/v1/course", courseRoute);
+app.use("/api/v1/purchase", purchaseRoute);
+app.use("/api/v1/progress", courseProgressRoute);
+app.use("/health", healthRoute);
 
 // it should be always at bottom
 // 404 handler
